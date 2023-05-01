@@ -1,20 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-
 	"github.com/gocolly/colly"
 )
 
-type Menu struct{
-	Title string
-	// MenuItem string
-	Price float64
+type Menu struct {
+	Title string `json:"title"`
+	Price string `json:"price"`
 }
 
 func main() {
 
-	// menu := Menu{}
+	menus := []Menu{}
 
 	scrapeUrl := "https://www.tacobell.com/food/breakfast"
 
@@ -28,20 +27,25 @@ func main() {
 		selection := h.DOM
 
 		title := selection.Find("h4").Text()
-		// price := selection.Find("p.styles_product-details__2VdYf > span:first-child")
-		fmt.Printf("%s : ",title)
 
 		childNode := selection.Children().Nodes
 		if len(childNode) == 4 {
 			price := selection.Find("p.styles_product-details__2VdYf > span:first-child").Text()
-			
-			fmt.Printf("%s \n",price)
-		} 
-
+			menu := Menu{
+				Title: title,
+				Price: price,
+			}
+			menus = append(menus, menu)
+		}
 	})
 
-	c.OnError(func(r *colly.Response, err error) {
+	c.OnError(func(_ *colly.Response, err error) {
 		fmt.Printf("error while scraping:%s \n", err.Error())
+	})
+
+	c.OnScraped(func(r *colly.Response) {
+		jsonData, _ := json.Marshal(menus)
+		fmt.Println(string(jsonData))
 	})
 
 	c.Visit(scrapeUrl)
